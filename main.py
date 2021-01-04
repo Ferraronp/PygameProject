@@ -207,20 +207,20 @@ class Board:
         if self.boardpiece[cell[1]][cell[0]] is None:
             return
 
-        if type(self.boardpiece[selected_cell[1]][selected_cell[0]]) is King:
-            if self.boardpiece[selected_cell[1]][selected_cell[0]].color == "red":
+        if type(self.boardpiece[cell[1]][cell[0]]) is King:
+            if self.boardpiece[cell[1]][cell[0]].color == "red":
                 del self.playerslive[self.playerslive.index("red")]
                 for sprite in red_piece_sprites:
                     self.boardpiece[sprite.y][sprite.x] = None
                     self.board[sprite.y][sprite.x] = '.'
                     sprite.kill()
-            elif self.boardpiece[selected_cell[1]][selected_cell[0]].color == "blue":
+            elif self.boardpiece[cell[1]][cell[0]].color == "blue":
                 del self.playerslive[self.playerslive.index("blue")]
                 for sprite in blue_piece_sprites:
                     self.boardpiece[sprite.y][sprite.x] = None
                     self.board[sprite.y][sprite.x] = '.'
                     sprite.kill()
-            elif self.boardpiece[selected_cell[1]][selected_cell[0]].color == "black":
+            elif self.boardpiece[cell[1]][cell[0]].color == "black":
                 del self.playerslive[self.playerslive.index("black")]
                 for sprite in black_piece_sprites:
                     self.boardpiece[sprite.y][sprite.x] = None
@@ -229,6 +229,7 @@ class Board:
             self.hod = self.playerslive.index(self.boardpiece[chosen_cell[1]][chosen_cell[0]].color)
         else:
             self.boardpiece[cell[1]][cell[0]].kill()
+            self.boardpiece[cell[1]][cell[0]] = None
 
 
 class Tile(pygame.sprite.Sprite):
