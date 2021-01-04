@@ -257,6 +257,9 @@ class Piece(pygame.sprite.Sprite):
         self.numcolor = COLORS.index(self.color)
         self.x = x
         self.y = y
+        self.get_no_tree()
+        self.rect = self.image.get_rect().move(
+            tile_width * self.x + left, tile_height * self.y + top)
 
     def can_move_like_rook(self):
         move_cells = []
@@ -334,66 +337,32 @@ class Piece(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * self.x + left, tile_height * self.y + top)
 
+    def get_no_tree(self):
+        imagename = type(self).__name__.lower() + "_" + self.color + ".png"
+        self.image = load_image(imagename)
+
+    def get_tree(self):
+        imagename = type(self).__name__.lower() + "_" + self.color + "_on_tree.png"
+        self.image = load_image(imagename)
+
 
 class King(Piece):
-    def __init__(self, color, x, y, tree=False):
-        super().__init__(color, x, y, tree)
-        self.get_no_tree()
-        self.rect = self.image.get_rect().move(
-            tile_width * self.x + left, tile_height * self.y + top)
-
-    def can_move(self):
+     def can_move(self):
         move_cells1, kill_cells1 = self.can_move_like_bishop()
         move_cells2, kill_cells2 = self.can_move_like_rook()
         return move_cells1 + move_cells2, kill_cells1 + kill_cells2
 
-    def get_tree(self):
-        imagename = "king_" + self.color + "_on_tree.png"
-        self.image = load_image(imagename)
-
-    def get_no_tree(self):
-        imagename = "king_" + self.color + ".png"
-        self.image = load_image(imagename)
-
 
 class Rook(Piece):
-    def __init__(self, color, x, y, tree=False):
-        super().__init__(color, x, y, tree)
-        self.get_no_tree()
-        self.rect = self.image.get_rect().move(
-            tile_width * self.x + left, tile_height * self.y + top)
-
     def can_move(self):
         move_cells, kill_cells = self.can_move_like_rook()
         return move_cells, kill_cells
 
-    def get_no_tree(self):
-        imagename = "rook_" + self.color + ".png"
-        self.image = load_image(imagename)
-
-    def get_tree(self):
-        imagename = "rook_" + self.color + "_on_tree.png"
-        self.image = load_image(imagename)
-
 
 class Bishop(Piece):
-    def __init__(self, color, x, y, tree=False):
-        super().__init__(color, x, y, tree)
-        self.get_no_tree()
-        self.rect = self.image.get_rect().move(
-            tile_width * self.x + left, tile_height * self.y + top)
-
     def can_move(self):
         move_cells, kill_cells = self.can_move_like_bishop()
         return move_cells, kill_cells
-
-    def get_tree(self):
-        imagename = "bishop_" + self.color + "_on_tree.png"
-        self.image = load_image(imagename)
-
-    def get_no_tree(self):
-        imagename = "bishop_" + self.color + ".png"
-        self.image = load_image(imagename)
 
 
 class Tree(pygame.sprite.Sprite):
@@ -464,10 +433,11 @@ red_piece_sprites = pygame.sprite.Group()
 blue_piece_sprites = pygame.sprite.Group()
 black_piece_sprites = pygame.sprite.Group()
 
-level = load_level("map1.txt")
+playerskolvo = 3
+level = load_level("map" + str(playerskolvo) + "_" + str(randrange(1, 6)) + ".txt")
 selected_cell = list(map(lambda x: x // 2 + 1, maximum))
-board = Board(level, 2)
-# board.hod = 1
+board = Board(level, playerskolvo)
+
 generate_level(level)
 chosen_cell = False
 selecting_kill = False
