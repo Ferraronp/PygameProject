@@ -60,7 +60,7 @@ def load_level(filename):
 class Board:
     def __init__(self, level, players):
         """players - количество игроков от 2 до 3"""
-        self.board = level
+        # self.board = level
         self.boardpiece = [[]]
         self.players = ["red", "blue", "black"][:players]
         self.playerslive = self.players[::]
@@ -69,35 +69,35 @@ class Board:
         self.left = left
         self.top = top
         self.cell_size = tile_width
-        for y in range(len(self.board)):
-            for x in range(len(self.board[y])):
-                if self.board[y][x] in ['6', '7', '8'] and self.kolvo == 2:
-                    self.board[y][x] = '.'
+        for y in range(len(level)):
+            for x in range(len(level[y])):
+                if level[y][x] in ['6', '7', '8'] and self.kolvo == 2:
+                    level[y][x] = '.'
                     self.boardpiece[y] += [None]
-                if self.board[y][x] == 'x':
+                if level[y][x] == 'x':
                     self.boardpiece[y] += [None]
                     Tile("none", x, y)
-                elif self.board[y][x] == '@':
+                elif level[y][x] == '@':
                     Tile("gold", x, y)
                     global gold_block
                     gold_block = (x, y)
                     self.boardpiece[y] += [None]
-                elif self.board[y][x] == '.':
+                elif level[y][x] == '.':
                     self.boardpiece[y] += [None]
                     Tile("empty", x, y)
-                elif self.board[y][x] == '#':
+                elif level[y][x] == '#':
                     self.boardpiece[y] += [None]
                     Tile("empty", x, y)
                     Tree(x, y)
-                elif int(self.board[y][x]) % 3 == 0:
+                elif int(level[y][x]) % 3 == 0:
                     Tile("empty", x, y)
-                    self.boardpiece[y] += [King(COLORS[(int(self.board[y][x])) // 3], x, y)]
-                elif int(self.board[y][x]) % 3 == 1:
+                    self.boardpiece[y] += [King(COLORS[(int(level[y][x])) // 3], x, y)]
+                elif int(level[y][x]) % 3 == 1:
                     Tile("empty", x, y)
-                    self.boardpiece[y] += [Rook(COLORS[(int(self.board[y][x])) // 3], x, y)]
-                elif int(self.board[y][x]) % 3 == 2:
+                    self.boardpiece[y] += [Rook(COLORS[(int(level[y][x])) // 3], x, y)]
+                elif int(level[y][x]) % 3 == 2:
                     Tile("empty", x, y)
-                    self.boardpiece[y] += [Bishop(COLORS[(int(self.board[y][x])) // 3], x, y)]
+                    self.boardpiece[y] += [Bishop(COLORS[(int(level[y][x])) // 3], x, y)]
             self.boardpiece += [[]]
 
     def render(self):
@@ -109,8 +109,8 @@ class Board:
                                                    self.cell_size), width=1)'''
         pygame.draw.rect(screen, "black", (left,
                                            top,
-                                           self.cell_size * len(self.board),
-                                           self.cell_size * len(self.board[0])), width=2)
+                                           self.cell_size * len(self.boardpiece[0]),
+                                           self.cell_size * len(self.boardpiece)), width=2)
 
         for cell in kill_cells:
             pygame.draw.line(screen, "red",
@@ -144,13 +144,13 @@ class Board:
     def get_click(self, pos):
         cell = self.get_cell(pos)
         global selected_cell
-        if not (cell is None or self.board[cell[0]][cell[1]] == 'x'):
+        if not (cell is None or level[cell[0]][cell[1]] == 'x'):
             selected_cell = list(cell)
 
     def get_cell(self, pos):
         x = (pos[0] - self.left) // self.cell_size
         y = (pos[1] - self.top) // self.cell_size
-        if -1 < x < len(self.board) and -1 < y < len(self.board[0]):
+        if -1 < x < len(self.boardpiece) and -1 < y < len(self.boardpiece[0]):
             return x, y
         return None
 
@@ -170,11 +170,11 @@ class Board:
                 self.boardpiece[chosen_cell[1]][chosen_cell[0]].wasongold = True
                 selecting_kill = True
 
-        f = self.board[chosen_cell[1]][chosen_cell[0]]
+        '''f = self.board[chosen_cell[1]][chosen_cell[0]]
         self.board[chosen_cell[1]][chosen_cell[0]] = '.'
         if chosen_cell[1] == gold_block[1] and chosen_cell[0] == gold_block[0]:
             self.board[chosen_cell[1]][chosen_cell[0]] = '@'
-        self.board[selected_cell[1]][selected_cell[0]] = f
+        self.board[selected_cell[1]][selected_cell[0]] = f'''
 
         self.boardpiece[chosen_cell[1]][chosen_cell[0]].x = selected_cell[0]
         self.boardpiece[chosen_cell[1]][chosen_cell[0]].y = selected_cell[1]
@@ -263,31 +263,35 @@ class Piece(pygame.sprite.Sprite):
         move_cells = []
         kill_cells = []
         if chosen_cell[1] - 1 >= 0:
-            if board.board[chosen_cell[1] - 1][chosen_cell[0]].isdigit() and\
-                    int(board.board[chosen_cell[1] - 1][chosen_cell[0]]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0]] is None and\
+                    board.boardpiece[chosen_cell[1] - 1][chosen_cell[0]].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0]].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0], chosen_cell[1] - 1]]
-            elif board.board[chosen_cell[1] - 1][chosen_cell[0]] in ["@", "."]:
+            elif level[chosen_cell[1] - 1][chosen_cell[0]] in ["@", "."]:
                 move_cells += [[chosen_cell[0], chosen_cell[1] - 1]]
 
         if chosen_cell[0] - 1 >= 0:
-            if board.board[chosen_cell[1]][chosen_cell[0] - 1].isdigit() and\
-                    int(board.board[chosen_cell[1]][chosen_cell[0] - 1]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1]][chosen_cell[0] - 1] is None and\
+                    board.boardpiece[chosen_cell[1]][chosen_cell[0] - 1].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1]][chosen_cell[0] - 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] - 1, chosen_cell[1]]]
-            elif board.board[chosen_cell[1]][chosen_cell[0] - 1] in ["@", "."]:
+            elif level[chosen_cell[1]][chosen_cell[0] - 1] in ["@", "."]:
                 move_cells += [[chosen_cell[0] - 1, chosen_cell[1]]]
 
         if chosen_cell[0] + 1 <= maximum[0]:
-            if board.board[chosen_cell[1]][chosen_cell[0] + 1].isdigit() and\
-                    int(board.board[chosen_cell[1]][chosen_cell[0] + 1]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1]][chosen_cell[0] + 1] is None and\
+                    board.boardpiece[chosen_cell[1]][chosen_cell[0] + 1].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1]][chosen_cell[0] + 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] + 1, chosen_cell[1]]]
-            elif board.board[chosen_cell[1]][chosen_cell[0] + 1] in ["@", "."]:
+            elif level[chosen_cell[1]][chosen_cell[0] + 1] in ["@", "."]:
                 move_cells += [[chosen_cell[0] + 1, chosen_cell[1]]]
 
         if chosen_cell[1] + 1 <= maximum[1]:
-            if board.board[chosen_cell[1] + 1][chosen_cell[0]].isdigit() and\
-                    int(board.board[chosen_cell[1] + 1][chosen_cell[0]]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0]] is None and\
+                    board.boardpiece[chosen_cell[1] + 1][chosen_cell[0]].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0]].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0], chosen_cell[1] + 1]]
-            elif board.board[chosen_cell[1] + 1][chosen_cell[0]] in ["@", "."]:
+            elif level[chosen_cell[1] + 1][chosen_cell[0]] in ["@", "."]:
                 move_cells += [[chosen_cell[0], chosen_cell[1] + 1]]
         return move_cells, kill_cells
 
@@ -295,31 +299,35 @@ class Piece(pygame.sprite.Sprite):
         move_cells = []
         kill_cells = []
         if chosen_cell[1] - 1 >= 0 and chosen_cell[0] - 1 >= 0:
-            if board.board[chosen_cell[1] - 1][chosen_cell[0] - 1].isdigit() and\
-                    int(board.board[chosen_cell[1] - 1][chosen_cell[0] - 1]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] - 1] is None and\
+                    board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] - 1].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] - 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] - 1, chosen_cell[1] - 1]]
-            elif board.board[chosen_cell[1] - 1][chosen_cell[0] - 1] in ["@", "."]:
+            elif level[chosen_cell[1] - 1][chosen_cell[0] - 1] in ["@", "."]:
                 move_cells += [[chosen_cell[0] - 1, chosen_cell[1] - 1]]
 
         if chosen_cell[1] - 1 >= 0 and chosen_cell[0] + 1 <= maximum[0]:
-            if board.board[chosen_cell[1] - 1][chosen_cell[0] + 1].isdigit() and \
-                    int(board.board[chosen_cell[1] - 1][chosen_cell[0] + 1]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] + 1] is None and\
+                    board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] + 1].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] + 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] + 1, chosen_cell[1] - 1]]
-            elif board.board[chosen_cell[1] - 1][chosen_cell[0] + 1] in ["@", "."]:
+            elif level[chosen_cell[1] - 1][chosen_cell[0] + 1] in ["@", "."]:
                 move_cells += [[chosen_cell[0] + 1, chosen_cell[1] - 1]]
 
         if chosen_cell[1] + 1 <= maximum[1] and chosen_cell[0] - 1 >= 0:
-            if board.board[chosen_cell[1] + 1][chosen_cell[0] - 1].isdigit() and \
-                    int(board.board[chosen_cell[1] + 1][chosen_cell[0] - 1]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] - 1] is None and\
+                    board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] - 1].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] - 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] - 1, chosen_cell[1] + 1]]
-            elif board.board[chosen_cell[1] + 1][chosen_cell[0] - 1] in ["@", "."]:
+            elif level[chosen_cell[1] + 1][chosen_cell[0] - 1] in ["@", "."]:
                 move_cells += [[chosen_cell[0] - 1, chosen_cell[1] + 1]]
 
         if chosen_cell[1] + 1 <= maximum[1] and chosen_cell[0] + 1 <= maximum[0]:
-            if board.board[chosen_cell[1] + 1][chosen_cell[0] + 1].isdigit() and \
-                    int(board.board[chosen_cell[1] + 1][chosen_cell[0] + 1]) // 3 != self.numcolor:
+            if not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] + 1] is None and\
+                    board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] + 1].color != self.color and\
+                    (not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] + 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] + 1, chosen_cell[1] + 1]]
-            elif board.board[chosen_cell[1] + 1][chosen_cell[0] + 1] in ["@", "."]:
+            elif level[chosen_cell[1] + 1][chosen_cell[0] + 1] in ["@", "."]:
                 move_cells += [[chosen_cell[0] + 1, chosen_cell[1] + 1]]
         return move_cells, kill_cells
 
