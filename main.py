@@ -114,7 +114,7 @@ class Board:
     def get_click(self, pos):
         cell = self.get_cell(pos)
         global selected_cell
-        if not cell is None and not level[cell[1]][cell[0]] == 'x':
+        if cell is not None and not level[cell[1]][cell[0]] == 'x':
             selected_cell = list(cell)
 
     def get_cell(self, pos):
@@ -418,7 +418,7 @@ tile_images = {
     'gold': load_image('gold.png'),
     'empty1': load_image('grass1.png'),
     'empty2': load_image('grass2.png'),
-    'none': load_image('none3.png')
+    'none': load_image('none2.png')
 }
 
 all_sprites = pygame.sprite.Group()
@@ -457,40 +457,41 @@ while running:
         event.type == pygame.JOYHATMOTION or
         event.type == pygame.JOYBUTTONDOWN) and game_over:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            board.get_click(event.pos)
         if event.type == pygame.JOYHATMOTION:
             if joysticks[0].get_hat(0)[0] != 0 and joysticks[0].get_hat(0)[1] != 0:
                 continue
             selected_cell[0] += joysticks[0].get_hat(0)[0]
             selected_cell[1] -= joysticks[0].get_hat(0)[1]
             if check_selected_cell():
-                if level[selected_cell[0]][selected_cell[1]] == "x":
+                if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[0] -= joysticks[0].get_hat(0)[0]
                     selected_cell[1] += joysticks[0].get_hat(0)[1]
         if event.type == pygame.KEYDOWN and (event.key == 100 or event.key == 1073741903):
             selected_cell[0] += 1
             if check_selected_cell():
-                if level[selected_cell[0]][selected_cell[1]] == "x":
+                if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[0] -= 1
         if event.type == pygame.KEYDOWN and (event.key == 97 or event.key == 1073741904):
             selected_cell[0] -= 1
             if check_selected_cell():
-                if level[selected_cell[0]][selected_cell[1]] == "x":
+                if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[0] += 1
         if event.type == pygame.KEYDOWN and (event.key == 115 or event.key == 1073741905):
             selected_cell[1] += 1
             if check_selected_cell():
-                if level[selected_cell[0]][selected_cell[1]] == "x":
+                if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[1] -= 1
         if event.type == pygame.KEYDOWN and (event.key == 119 or event.key == 1073741906):
             selected_cell[1] -= 1
             if check_selected_cell():
-                if level[selected_cell[0]][selected_cell[1]] == "x":
+                if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[1] += 1
+
         if not selecting_kill and not selecting_tree and not moving_tree and not game_over and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
-                 (event.type == pygame.KEYDOWN and event.key in [13, 32])):
+                 (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
+                 (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
+                  list(board.get_cell(event.pos)) == selected_cell)):
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                     board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod]:
                 chosen_cell = selected_cell[::]
@@ -503,7 +504,9 @@ while running:
 
         if selecting_tree and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
-                 (event.type == pygame.KEYDOWN and event.key in [13, 32])):
+                 (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
+                 (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
+                  list(board.get_cell(event.pos)) == selected_cell)):
             if level[selected_cell[1]][selected_cell[0]] == '#':
                 level[selected_cell[1]][selected_cell[0]] = '.'
                 for sprite in other_sprites:
@@ -522,7 +525,9 @@ while running:
 
         if moving_tree and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
-                 (event.type == pygame.KEYDOWN and event.key in [13, 32])):
+                 (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
+                 (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
+                  list(board.get_cell(event.pos)) == selected_cell)):
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                     board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod] and\
                     level[selected_cell[1]][selected_cell[0]] != '@':
@@ -542,7 +547,9 @@ while running:
 
         if selecting_kill and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
-                 (event.type == pygame.KEYDOWN and event.key in [13, 32])):
+                 (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
+                 (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
+                  list(board.get_cell(event.pos)) == selected_cell)):
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                     board.boardpiece[selected_cell[1]][selected_cell[0]].color != board.playerslive[board.hod] and\
                     not (type(board.boardpiece[selected_cell[1]][selected_cell[0]]) is King):
@@ -551,6 +558,9 @@ while running:
                 board.hod = (board.hod + 1) % len(board.playerslive)
                 if not (selectingingimage is None):
                     selectingingimage.kill()
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            board.get_click(event.pos)
     screen.fill((255, 255, 255))
     font = pygame.font.SysFont("Bauhaus 93", 30)
     if game_over:
