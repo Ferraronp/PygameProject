@@ -69,35 +69,6 @@ class Board:
         self.left = left
         self.top = top
         self.cell_size = tile_width
-        for y in range(len(level)):
-            for x in range(len(level[y])):
-                if level[y][x] in ['6', '7', '8'] and self.kolvo == 2:
-                    level[y][x] = '.'
-                if level[y][x] == 'x':
-                    self.boardpiece[y] += [None]
-                    Tile("none", x, y)
-                elif level[y][x] == '@':
-                    Tile("gold", x, y)
-                    global gold_block
-                    gold_block = (x, y)
-                    self.boardpiece[y] += [None]
-                elif level[y][x] == '.':
-                    self.boardpiece[y] += [None]
-                    Tile("empty", x, y)
-                elif level[y][x] == '#':
-                    self.boardpiece[y] += [None]
-                    Tile("empty", x, y)
-                    Tree(x, y)
-                elif int(level[y][x]) % 3 == 0:
-                    Tile("empty", x, y)
-                    self.boardpiece[y] += [King(COLORS[(int(level[y][x])) // 3], x, y)]
-                elif int(level[y][x]) % 3 == 1:
-                    Tile("empty", x, y)
-                    self.boardpiece[y] += [Rook(COLORS[(int(level[y][x])) // 3], x, y)]
-                elif int(level[y][x]) % 3 == 2:
-                    Tile("empty", x, y)
-                    self.boardpiece[y] += [Bishop(COLORS[(int(level[y][x])) // 3], x, y)]
-            self.boardpiece += [[]]
 
     def render(self):
         '''for i in range(len(self.board)):
@@ -143,7 +114,7 @@ class Board:
     def get_click(self, pos):
         cell = self.get_cell(pos)
         global selected_cell
-        if not cell is None and not level[cell[0]][cell[1]] == 'x':
+        if not cell is None and not level[cell[1]][cell[0]] == 'x':
             selected_cell = list(cell)
 
     def get_cell(self, pos):
@@ -168,12 +139,6 @@ class Board:
             else:
                 self.boardpiece[chosen_cell[1]][chosen_cell[0]].wasongold = True
                 selecting_tree = True
-
-        '''f = self.board[chosen_cell[1]][chosen_cell[0]]
-        self.board[chosen_cell[1]][chosen_cell[0]] = '.'
-        if chosen_cell[1] == gold_block[1] and chosen_cell[0] == gold_block[0]:
-            self.board[chosen_cell[1]][chosen_cell[0]] = '@'
-        self.board[selected_cell[1]][selected_cell[0]] = f'''
 
         self.boardpiece[chosen_cell[1]][chosen_cell[0]].x = selected_cell[0]
         self.boardpiece[chosen_cell[1]][chosen_cell[0]].y = selected_cell[1]
@@ -257,7 +222,8 @@ class Piece(pygame.sprite.Sprite):
         self.numcolor = COLORS.index(self.color)
         self.x = x
         self.y = y
-        self.get_no_tree()
+        imagename = type(self).__name__.lower() + "_" + self.color + ".png"
+        self.image = load_image(imagename)
         self.rect = self.image.get_rect().move(
             tile_width * self.x + left, tile_height * self.y + top)
 
@@ -269,7 +235,8 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1] - 1][chosen_cell[0]].color != self.color and\
                     (not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0]].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0], chosen_cell[1] - 1]]
-            elif level[chosen_cell[1] - 1][chosen_cell[0]] in ["@", "."]:
+            elif level[chosen_cell[1] - 1][chosen_cell[0]] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1] - 1][chosen_cell[0]] is None:
                 move_cells += [[chosen_cell[0], chosen_cell[1] - 1]]
 
         if chosen_cell[0] - 1 >= 0:
@@ -277,7 +244,8 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1]][chosen_cell[0] - 1].color != self.color and\
                     (not board.boardpiece[chosen_cell[1]][chosen_cell[0] - 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] - 1, chosen_cell[1]]]
-            elif level[chosen_cell[1]][chosen_cell[0] - 1] in ["@", "."]:
+            elif level[chosen_cell[1]][chosen_cell[0] - 1] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1]][chosen_cell[0] - 1] is None:
                 move_cells += [[chosen_cell[0] - 1, chosen_cell[1]]]
 
         if chosen_cell[0] + 1 <= maximum[0]:
@@ -285,7 +253,8 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1]][chosen_cell[0] + 1].color != self.color and\
                     (not board.boardpiece[chosen_cell[1]][chosen_cell[0] + 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] + 1, chosen_cell[1]]]
-            elif level[chosen_cell[1]][chosen_cell[0] + 1] in ["@", "."]:
+            elif level[chosen_cell[1]][chosen_cell[0] + 1] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1]][chosen_cell[0] + 1] is None:
                 move_cells += [[chosen_cell[0] + 1, chosen_cell[1]]]
 
         if chosen_cell[1] + 1 <= maximum[1]:
@@ -293,7 +262,8 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1] + 1][chosen_cell[0]].color != self.color and\
                     (not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0]].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0], chosen_cell[1] + 1]]
-            elif level[chosen_cell[1] + 1][chosen_cell[0]] in ["@", "."]:
+            elif level[chosen_cell[1] + 1][chosen_cell[0]] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1] + 1][chosen_cell[0]] is None:
                 move_cells += [[chosen_cell[0], chosen_cell[1] + 1]]
         return move_cells, kill_cells
 
@@ -305,7 +275,8 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] - 1].color != self.color and\
                     (not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] - 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] - 1, chosen_cell[1] - 1]]
-            elif level[chosen_cell[1] - 1][chosen_cell[0] - 1] in ["@", "."]:
+            elif level[chosen_cell[1] - 1][chosen_cell[0] - 1] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] - 1] is None:
                 move_cells += [[chosen_cell[0] - 1, chosen_cell[1] - 1]]
 
         if chosen_cell[1] - 1 >= 0 and chosen_cell[0] + 1 <= maximum[0]:
@@ -313,7 +284,8 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] + 1].color != self.color and\
                     (not board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] + 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] + 1, chosen_cell[1] - 1]]
-            elif level[chosen_cell[1] - 1][chosen_cell[0] + 1] in ["@", "."]:
+            elif level[chosen_cell[1] - 1][chosen_cell[0] + 1] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1] - 1][chosen_cell[0] + 1] is None:
                 move_cells += [[chosen_cell[0] + 1, chosen_cell[1] - 1]]
 
         if chosen_cell[1] + 1 <= maximum[1] and chosen_cell[0] - 1 >= 0:
@@ -321,7 +293,8 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] - 1].color != self.color and\
                     (not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] - 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] - 1, chosen_cell[1] + 1]]
-            elif level[chosen_cell[1] + 1][chosen_cell[0] - 1] in ["@", "."]:
+            elif level[chosen_cell[1] + 1][chosen_cell[0] - 1] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] - 1] is None:
                 move_cells += [[chosen_cell[0] - 1, chosen_cell[1] + 1]]
 
         if chosen_cell[1] + 1 <= maximum[1] and chosen_cell[0] + 1 <= maximum[0]:
@@ -329,21 +302,14 @@ class Piece(pygame.sprite.Sprite):
                     board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] + 1].color != self.color and\
                     (not board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] + 1].tree or selecting_kill):
                 kill_cells += [[chosen_cell[0] + 1, chosen_cell[1] + 1]]
-            elif level[chosen_cell[1] + 1][chosen_cell[0] + 1] in ["@", "."]:
+            elif level[chosen_cell[1] + 1][chosen_cell[0] + 1] in ["@", "."] and\
+                    board.boardpiece[chosen_cell[1] + 1][chosen_cell[0] + 1] is None:
                 move_cells += [[chosen_cell[0] + 1, chosen_cell[1] + 1]]
         return move_cells, kill_cells
 
     def move(self):
         self.rect = self.image.get_rect().move(
-            tile_width * self.x + left, tile_height * self.y + top)
-
-    def get_no_tree(self):
-        imagename = type(self).__name__.lower() + "_" + self.color + ".png"
-        self.image = load_image(imagename)
-
-    def get_tree(self):
-        imagename = type(self).__name__.lower() + "_" + self.color + "_on_tree.png"
-        self.image = load_image(imagename)
+            tile_width * self.x + left, tile_height * self.y + top - (self.tree * 19))
 
 
 class King(Piece):
@@ -389,13 +355,43 @@ class SelectImage(pygame.sprite.Sprite):
             tile_width * self.x + left, tile_height * self.y + top)
 
 
-def generate_level(level):
+def generate_level():
+    global level
+    i = 1
     for y in range(len(level)):
         for x in range(len(level[y])):
-            if level[y][x] == '.':
-                Tile('empty', x, y)
+            if level[y][x] in ['6', '7', '8'] and board.kolvo == 2:
+                level[y][x] = '.'
+            if level[y][x] == 'x':
+                board.boardpiece[y] += [None]
+                Tile("none", x, y)
             elif level[y][x] == '@':
-                Tile('gold', x, y)
+                Tile("gold", x, y)
+                global gold_block
+                gold_block = (x, y)
+                board.boardpiece[y] += [None]
+            elif level[y][x] == '.':
+                board.boardpiece[y] += [None]
+                Tile("empty" + str(i % 2 + 1), x, y)
+            elif level[y][x] == '#':
+                board.boardpiece[y] += [None]
+                Tile("empty" + str(i % 2 + 1), x, y)
+                Tree(x, y)
+            elif int(level[y][x]) % 3 == 0:
+                Tile("empty" + str(i % 2 + 1), x, y)
+                board.boardpiece[y] += [King(COLORS[(int(level[y][x])) // 3], x, y)]
+                level[y][x] = '.'
+            elif int(level[y][x]) % 3 == 1:
+                Tile("empty" + str(i % 2 + 1), x, y)
+                board.boardpiece[y] += [Rook(COLORS[(int(level[y][x])) // 3], x, y)]
+                level[y][x] = '.'
+            elif int(level[y][x]) % 3 == 2:
+                Tile("empty" + str(i % 2 + 1), x, y)
+                board.boardpiece[y] += [Bishop(COLORS[(int(level[y][x])) // 3], x, y)]
+                level[y][x] = '.'
+            i += 1
+        board.boardpiece += [[]]
+    del board.boardpiece[-1]
 
 
 def check_selected_cell():
@@ -414,14 +410,15 @@ pygame.init()
 pygame.font.init()
 pygame.joystick.init()
 
-tile_width = tile_height = 30
-size = width, height = 400, 400
+tile_width = tile_height = 50
+size = width, height = tile_width * 9 + 50, tile_height * 9 + 150
 screen = pygame.display.set_mode(size)
 
 tile_images = {
     'gold': load_image('gold.png'),
-    'empty': load_image('grass.png'),
-    'none': load_image('none.png')
+    'empty1': load_image('grass1.png'),
+    'empty2': load_image('grass2.png'),
+    'none': load_image('none3.png')
 }
 
 all_sprites = pygame.sprite.Group()
@@ -438,7 +435,7 @@ level = load_level("map" + str(playerskolvo) + "_" + str(randrange(1, 6)) + ".tx
 selected_cell = list(map(lambda x: x // 2 + 1, maximum))
 board = Board(level, playerskolvo)
 
-generate_level(level)
+generate_level()
 chosen_cell = False
 selecting_kill = False
 selecting_tree = False
@@ -491,7 +488,7 @@ while running:
             if check_selected_cell():
                 if level[selected_cell[0]][selected_cell[1]] == "x":
                     selected_cell[1] += 1
-        if not selecting_kill and not selecting_tree and not moving_tree and\
+        if not selecting_kill and not selecting_tree and not moving_tree and not game_over and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
                  (event.type == pygame.KEYDOWN and event.key in [13, 32])):
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
@@ -502,7 +499,7 @@ while running:
                 board.move_piece()
                 if board.boardpiece[selected_cell[1]][selected_cell[0]].tree:
                     board.boardpiece[selected_cell[1]][selected_cell[0]].tree = False
-                    board.boardpiece[selected_cell[1]][selected_cell[0]].get_no_tree()
+                    board.boardpiece[selected_cell[1]][selected_cell[0]].move()
 
         if selecting_tree and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
@@ -517,7 +514,7 @@ while running:
                         break
                 if not board.boardpiece[selected_cell[1]][selected_cell[0]] is None:
                     board.boardpiece[selected_cell[1]][selected_cell[0]].tree = False
-                    board.boardpiece[selected_cell[1]][selected_cell[0]].get_no_tree()
+                    board.boardpiece[selected_cell[1]][selected_cell[0]].move()
                 selecting_tree = False
                 moving_tree = True
                 if not (selectingingimage is None):
@@ -530,7 +527,7 @@ while running:
                     board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod] and\
                     level[selected_cell[1]][selected_cell[0]] != '@':
                 board.boardpiece[selected_cell[1]][selected_cell[0]].tree = True
-                board.boardpiece[selected_cell[1]][selected_cell[0]].get_tree()
+                board.boardpiece[selected_cell[1]][selected_cell[0]].move()
                 level[selected_cell[1]][selected_cell[0]] = '#'
                 for sprite in other_sprites:
                     if sprite.x == 500 and sprite.y == 500:
@@ -559,17 +556,17 @@ while running:
     if game_over:
         text = "Player " + str(board.playerslive[board.hod]) + " win"
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 310))
+        screen.blit(text, (10, height - 90))
         text = "Press any key to continue"
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 350))
+        screen.blit(text, (10, height - 50))
     elif selecting_tree:
         text = "Player " + str(board.playerslive[board.hod])
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 310))
+        screen.blit(text, (10, height - 90))
         text = "Select tree to move"
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 350))
+        screen.blit(text, (10, height - 50))
         if level[selected_cell[1]][selected_cell[0]] == '#':
             if not (selectingingimage is None):
                 selectingingimage.kill()
@@ -579,10 +576,10 @@ while running:
     elif moving_tree:
         text = "Player " + str(board.playerslive[board.hod])
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 310))
+        screen.blit(text, (10, height - 90))
         text = "Select piece to place on tree"
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 350))
+        screen.blit(text, (10, height - 50))
         if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                 board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod] and\
                 level[selected_cell[1]][selected_cell[0]] != '@':
@@ -594,10 +591,10 @@ while running:
     elif selecting_kill:
         text = "Player " + str(board.playerslive[board.hod])
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 310))
+        screen.blit(text, (10, height - 90))
         text = "Select piece to kill"
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 350))
+        screen.blit(text, (10, height - 50))
         if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                 board.boardpiece[selected_cell[1]][selected_cell[0]].color != board.playerslive[board.hod] and \
                 not (type(board.boardpiece[selected_cell[1]][selected_cell[0]]) is King):
@@ -609,7 +606,7 @@ while running:
     else:
         text = "Player " + str(board.playerslive[board.hod]) + " move"
         text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, 350))
+        screen.blit(text, (10, height - 50))
     tile_sprites.draw(screen)
     other_sprites.draw(screen)
     piece_sprites.draw(screen)
