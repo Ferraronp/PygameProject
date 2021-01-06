@@ -57,6 +57,10 @@ def load_level(filename):
     return list(map(lambda x: list(x.ljust(max_width, '.')), level_map))
 
 
+code = "IDDQD"
+i = 0
+
+
 class Board:
     def __init__(self, players):
         """players - количество игроков от 2 до 3"""
@@ -154,6 +158,8 @@ class Board:
         kill_cells = []
         if len(self.playerslive) == 1:
             game_over = True
+        if game_over:
+            clock.tick(1000)
         '''for i in range(len(self.boardpiece)):
             for j in range(len(self.boardpiece[i])):
                 if self.boardpiece[i][j] is None:
@@ -176,19 +182,19 @@ class Board:
                 del self.playerslive[self.playerslive.index("red")]
                 for sprite in red_piece_sprites:
                     self.boardpiece[sprite.y][sprite.x] = None
-                    self.board[sprite.y][sprite.x] = '.'
+                    level[sprite.y][sprite.x] = '.'
                     sprite.kill()
             elif self.boardpiece[cell[1]][cell[0]].color == "blue":
                 del self.playerslive[self.playerslive.index("blue")]
                 for sprite in blue_piece_sprites:
                     self.boardpiece[sprite.y][sprite.x] = None
-                    self.board[sprite.y][sprite.x] = '.'
+                    level[sprite.y][sprite.x] = '.'
                     sprite.kill()
             elif self.boardpiece[cell[1]][cell[0]].color == "black":
                 del self.playerslive[self.playerslive.index("black")]
                 for sprite in black_piece_sprites:
                     self.boardpiece[sprite.y][sprite.x] = None
-                    self.board[sprite.y][sprite.x] = '.'
+                    level[sprite.y][sprite.x] = '.'
                     sprite.kill()
             self.hod = self.playerslive.index(self.boardpiece[chosen_cell[1]][chosen_cell[0]].color)
         else:
@@ -406,7 +412,50 @@ def check_selected_cell():
 
 
 def training():
-    return start_screen()
+    intro_text = ["Назад", "Далее"]
+
+    fon = pygame.transform.scale(load_image('fon.png'), (width, height))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 25
+    rects = []
+    texts = []
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('yellow'))
+        intro_rect = string_rendered.get_rect()
+        intro_rect.left = text_coord + 10
+        intro_rect.y = 550
+        rects += [(pygame.draw.rect(screen, "blue", (text_coord - 10, intro_rect.y - 15, 150, 50), width=0), "exit")]
+        text_coord += intro_rect.width
+        screen.blit(string_rendered, intro_rect)
+        texts += [(string_rendered, intro_rect)]
+        text_coord += 250
+    mousex, mousey = 0, 0
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for rect, cmd in rects:
+                    if rect.left <= event.pos[0] <= rect.left + rect.width and \
+                            rect.top <= event.pos[1] <= rect.top + rect.height:
+                        if cmd == "exit":
+                            return
+                        return cmd()
+            if event.type == pygame.MOUSEMOTION:
+                mousex, mousey = event.pos
+        fon = pygame.transform.scale(load_image('fon.png'), (width, height))
+        screen.blit(fon, (0, 0))
+        for i in range(len(rects)):
+            if rects[i][0].left <= mousex <= rects[i][0].left + rects[i][0].width and \
+                    rects[i][0].top <= mousey <= rects[i][0].top + rects[i][0].height:
+                color = "red"
+            else:
+                color = "blue"
+            pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top, rects[i][0].width, rects[i][0].height))
+            screen.blit(*texts[i])
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def select_count_of_players():
@@ -419,6 +468,7 @@ def select_count_of_players():
     font = pygame.font.Font(None, 30)
     text_coord = 10
     rects = []
+    texts = []
     for line, i in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
@@ -428,7 +478,8 @@ def select_count_of_players():
         rects += [pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50), width=0)]
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
-
+        texts += [(string_rendered, intro_rect)]
+    mousex, mousey = 0, 0
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -440,11 +491,22 @@ def select_count_of_players():
                         if intro_text[i][1] == "exit":
                             return i + 2
                         return intro_text[i][1]()
+            if event.type == pygame.MOUSEMOTION:
+                mousex, mousey = event.pos
+        for i in range(len(rects)):
+            if rects[i].left <= mousex <= rects[i].left + rects[i].width and\
+                    rects[i].top <= mousey <= rects[i].top + rects[i].height:
+                color = "red"
+            else:
+                color = "blue"
+            pygame.draw.rect(screen, color, (rects[i].left, rects[i].top, rects[i].width, rects[i].height))
+            screen.blit(*texts[i])
         pygame.display.flip()
         clock.tick(FPS)
 
 
 def start_screen():
+    egg = [4, 4, 6, 6, 7, 5, 7, 5, 13, 14, 3]
     intro_text = [("Начать игру", select_count_of_players),
                   ("Обучение", training)]
 
@@ -453,27 +515,54 @@ def start_screen():
     font = pygame.font.Font(None, 30)
     text_coord = 10
     rects = []
-    for line, i in intro_text:
+    texts = []
+    for line, cmd in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('yellow'))
         intro_rect = string_rendered.get_rect()
         text_coord += 50
         intro_rect.top = text_coord
         intro_rect.x = 50
-        rects += [pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50), width=0)]
+        rects += [(pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50), width=0), cmd)]
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
-
+        texts += [(string_rendered, intro_rect)]
+    mousex, mousey = 0, 0
+    f = 0
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                for i in range(len(rects)):
-                    if rects[i].left <= event.pos[0] <= rects[i].left + rects[i].width and\
-                            rects[i].top <= event.pos[1] <= rects[i].top + rects[i].height:
-                        if intro_text[i][1] == "exit":
+                for rect, cmd in rects:
+                    if rect.left <= event.pos[0] <= rect.left + rect.width and\
+                            rect.top <= event.pos[1] <= rect.top + rect.height:
+                        if cmd == "exit":
                             return
-                        return intro_text[i][1]()
+                        return cmd()
+            if event.type == pygame.JOYBUTTONDOWN:
+                # print(event.button, f, egg[f])
+                if event.button == egg[f]:
+                    f += 1
+                    if f == len(egg):
+                        print("Hello, world")
+                        j = sys.path[0]
+                        sys.path[0] += '\\data'
+                        import life
+                        life.start()
+                        sys.path[0] = j
+                        egg = [-1]
+                else:
+                    f = 0
+            if event.type == pygame.MOUSEMOTION:
+                mousex, mousey = event.pos
+        for i in range(len(rects)):
+            if rects[i][0].left <= mousex <= rects[i][0].left + rects[i][0].width and\
+                    rects[i][0].top <= mousey <= rects[i][0].top + rects[i][0].height:
+                color = "red"
+            else:
+                color = "blue"
+            pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top, rects[i][0].width, rects[i][0].height))
+            screen.blit(*texts[i])
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -492,7 +581,7 @@ tile_images = {
     'gold': load_image('gold.png'),
     'empty1': load_image('grass1.png'),
     'empty2': load_image('grass2.png'),
-    'none': load_image('none2.png')
+    'none': load_image('none.png')
 }
 
 was_on_gold = {
@@ -512,6 +601,7 @@ black_piece_sprites = pygame.sprite.Group()
 
 
 playerskolvo = 0
+joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 while playerskolvo == 0:
     playerskolvo = start_screen()
 level = load_level("map" + str(playerskolvo) + "_" + str(randrange(1, 6)) + ".txt")
@@ -533,12 +623,37 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN and\
+            event.unicode == code[i] and chosen_cell and\
+                len(code) == 5:
+            i += 1
+            if i == len(code) and\
+                    level[chosen_cell[1]][chosen_cell[0]] != '@' and\
+                    not selecting_kill and not selecting_tree and\
+                    not moving_tree and not game_over:
+                board.boardpiece[chosen_cell[1]][chosen_cell[0]].tree = True
+                board.boardpiece[chosen_cell[1]][chosen_cell[0]].move()
+                Tree(chosen_cell[0], chosen_cell[1])
+                level[chosen_cell[1]][chosen_cell[0]] = "#"
+                code += 'D'
+                i = 0
+            elif i == len(code):
+                code += 'D'
+                i = 0
+        elif event.type == pygame.KEYDOWN:
+            i = 0
+
         if (event.type == pygame.KEYDOWN or
                 event.type == pygame.MOUSEBUTTONDOWN or
             event.type == pygame.JOYAXISMOTION or
             event.type == pygame.JOYHATMOTION or
             event.type == pygame.JOYBUTTONDOWN) and game_over:
             running = False
+        if event.type == pygame.JOYAXISMOTION:
+            selected_cell[event.axis % 2] += int(event.value)
+            if check_selected_cell():
+                if level[selected_cell[1]][selected_cell[0]] == "x":
+                    selected_cell[event.axis % 2] -= int(event.value)
         if event.type == pygame.JOYHATMOTION:
             if joysticks[0].get_hat(0)[0] != 0 and joysticks[0].get_hat(0)[1] != 0:
                 continue
@@ -549,21 +664,25 @@ while running:
                     selected_cell[0] -= joysticks[0].get_hat(0)[0]
                     selected_cell[1] += joysticks[0].get_hat(0)[1]
         if event.type == pygame.KEYDOWN and (event.key == 100 or event.key == 1073741903):
+            # d
             selected_cell[0] += 1
             if check_selected_cell():
                 if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[0] -= 1
         if event.type == pygame.KEYDOWN and (event.key == 97 or event.key == 1073741904):
+            # a
             selected_cell[0] -= 1
             if check_selected_cell():
                 if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[0] += 1
         if event.type == pygame.KEYDOWN and (event.key == 115 or event.key == 1073741905):
+            # s
             selected_cell[1] += 1
             if check_selected_cell():
                 if level[selected_cell[1]][selected_cell[0]] == "x":
                     selected_cell[1] -= 1
         if event.type == pygame.KEYDOWN and (event.key == 119 or event.key == 1073741906):
+            # w
             selected_cell[1] -= 1
             if check_selected_cell():
                 if level[selected_cell[1]][selected_cell[0]] == "x":
@@ -574,6 +693,7 @@ while running:
                  (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
                  (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
                   list(board.get_cell(event.pos)) == selected_cell)):
+            # Выбор/ход фигуры
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                     board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod]:
                 chosen_cell = selected_cell[::]
@@ -589,6 +709,7 @@ while running:
                  (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
                  (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
                   list(board.get_cell(event.pos)) == selected_cell)):
+            # Выбор дерева
             if level[selected_cell[1]][selected_cell[0]] == '#':
                 level[selected_cell[1]][selected_cell[0]] = '.'
                 for sprite in other_sprites:
@@ -604,12 +725,14 @@ while running:
                 moving_tree = True
                 if not (selectinging_image is None):
                     selectinging_image.kill()
+                continue
 
         if moving_tree and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
                  (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
                  (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
                   list(board.get_cell(event.pos)) == selected_cell)):
+            # Передвижение дерева
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                     board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod] and\
                     level[selected_cell[1]][selected_cell[0]] != '@':
@@ -632,6 +755,7 @@ while running:
                  (event.type == pygame.KEYDOWN and event.key in [13, 32]) or
                  (event.type == pygame.MOUSEBUTTONDOWN and board.get_cell(event.pos) is not None and
                   list(board.get_cell(event.pos)) == selected_cell)):
+            # Выбор убийства фигуры
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
                     board.boardpiece[selected_cell[1]][selected_cell[0]].color != board.playerslive[board.hod] and\
                     not (type(board.boardpiece[selected_cell[1]][selected_cell[0]]) is King):
