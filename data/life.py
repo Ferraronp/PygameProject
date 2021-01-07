@@ -68,22 +68,22 @@ class Life(Board):
 
     def get_neighbors(self, x, y):
         i = 0
-        if x > 0 and y > 0:
-            i += self.board[x - 1][y - 1]
-        if y > 0:
-            i += self.board[x][y - 1]
-        if x < self.height - 1 and y > 0:
-            i += self.board[x + 1][y - 1]
-        if x > 0:
-            i += self.board[x - 1][y]
         if x < self.height - 1:
-            i += self.board[x + 1][y]
-        if x > 0 and y < self.width - 1:
-            i += self.board[x - 1][y + 1]
+            mx = x + 1
+        else:
+            mx = 0
         if y < self.width - 1:
-            i += self.board[x][y + 1]
-        if x < self.height - 1 and y < self.width - 1:
-            i += self.board[x + 1][y + 1]
+            my = y + 1
+        else:
+            my = 0
+        i += self.board[x - 1][y - 1]
+        i += self.board[x][y - 1]
+        i += self.board[mx][y - 1]
+        i += self.board[x - 1][y]
+        i += self.board[mx][y]
+        i += self.board[x - 1][my]
+        i += self.board[x][my]
+        i += self.board[mx][my]
         return i
 
 

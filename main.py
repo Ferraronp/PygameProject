@@ -2,6 +2,7 @@ import sys
 import os
 from pprint import pprint
 from random import randrange
+import random
 
 import pygame
 COLORS = ["red", "blue", "black"]
@@ -10,9 +11,24 @@ top = 10
 maximum = (0, 0)
 gold_block = (0, 0)
 
+pygame.init()
+pygame.font.init()
+pygame.joystick.init()
+pygame.mixer.init()
+
+FPS = 60
+clock = pygame.time.Clock()
+tile_width = tile_height = 50
+size = width, height = tile_width * 9 + 50, tile_height * 9 + 150
+screen_rect = (0, 0, width, height)
+screen = pygame.display.set_mode(size)
+
 
 def terminate():
     pygame.quit()
+    pygame.mixer.quit()
+    pygame.font.quit()
+    pygame.joystick.quit()
     sys.exit()
 
 
@@ -159,7 +175,8 @@ class Board:
         if len(self.playerslive) == 1:
             game_over = True
         if game_over:
-            clock.tick(1000)
+            pygame.mixer.Sound('data\\win.mp3').play()
+            clock.tick(2000)
         '''for i in range(len(self.boardpiece)):
             for j in range(len(self.boardpiece[i])):
                 if self.boardpiece[i][j] is None:
@@ -200,12 +217,15 @@ class Board:
         else:
             self.boardpiece[cell[1]][cell[0]].kill()
             self.boardpiece[cell[1]][cell[0]] = None
+        pygame.mixer.Sound('data\\kill.mp3').play()
 
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, x, y):
         super().__init__(all_sprites, tile_sprites)
         global tile_images
+        self.x = x
+        self.y = y
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
             tile_width * x + left, tile_height * y + top)
@@ -411,6 +431,96 @@ def check_selected_cell():
     return res
 
 
+class Particle(pygame.sprite.Sprite):
+    fire = [load_image("particle.png")]
+    for scale in (5, 10, 20):
+        fire.append(pygame.transform.scale(fire[0], (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(particles_sprites)
+        self.image = random.choice(self.fire)
+        self.rect = self.image.get_rect()
+        self.i = 0
+
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+
+        self.gravity = 5
+
+    def update(self):
+        self.i += 1
+        if self.i == 2:
+            self.i = 0
+            self.velocity[1] += self.gravity
+            self.rect.x += self.velocity[0]
+            self.rect.y += self.velocity[1]
+            if not self.rect.colliderect(screen_rect):
+                self.kill()
+
+
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(particles_sprites)
+        self.i = 0
+        self.ux = 20
+        self.uy = 1
+        self.updating = False
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
+        pygame.mixer.Sound('data\\flashbang_hit.mp3').play()
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(pygame.transform.scale(pygame.transform.flip(pygame.transform.rotate(
+                    sheet.subsurface(pygame.Rect(
+                        frame_location, self.rect.size)), 270), True, False), (100, 60)))
+
+    def update(self):
+        if not self.updating:
+            return
+        self.i += 1
+        if self.i != 3:
+            return
+        self.i = 0
+        self.cur_frame = self.cur_frame + 1
+        if len(self.frames) == self.cur_frame:
+            pygame.mixer.Sound('data\\flashbang_explode.mp3').play()
+            create_particles(self.rect[:2])
+        if len(self.frames) <= self.cur_frame:
+            return
+        self.image = self.frames[self.cur_frame]
+
+    def move(self):
+        if self.updating:
+            return
+        self.i += 1
+        for sprite in tile_sprites:
+            if pygame.sprite.collide_mask(self, sprite) and level[sprite.y][sprite.x] == '.':
+                pygame.mixer.Sound('data\\flashbang_hit.mp3').play()
+                self.ux = self.ux // 2
+                self.uy = -int(self.uy) // 1.5 - 2
+                if self.uy >= 0:
+                    self.updating = True
+                    self.i = 0
+                    return
+        self.uy += 1 * self.i // 5
+        self.rect = self.rect.move(self.ux, self.uy)
+
+
+def create_particles(position):
+    particle_count = 1000
+    numbers = range(-100, 100)
+    for _ in range(particle_count):
+        Particle(position, random.choice(numbers), random.choice(numbers))
+
+
 def training():
     intro_text = ["Назад", "Далее"]
 
@@ -507,8 +617,8 @@ def select_count_of_players():
 
 def start_screen():
     egg = [4, 4, 6, 6, 7, 5, 7, 5, 13, 14, 3]
-    intro_text = [("Начать игру", select_count_of_players),
-                  ("Обучение", training)]
+    intro_text = [("Начать игру", select_count_of_players)]  # ,
+                  # ("Обучение", training)]
 
     fon = pygame.transform.scale(load_image('fon.png'), (width, height))
     screen.blit(fon, (0, 0))
@@ -567,16 +677,6 @@ def start_screen():
         clock.tick(FPS)
 
 
-pygame.init()
-pygame.font.init()
-pygame.joystick.init()
-
-FPS = 60
-clock = pygame.time.Clock()
-tile_width = tile_height = 50
-size = width, height = tile_width * 9 + 50, tile_height * 9 + 150
-screen = pygame.display.set_mode(size)
-
 tile_images = {
     'gold': load_image('gold.png'),
     'empty1': load_image('grass1.png'),
@@ -594,33 +694,59 @@ all_sprites = pygame.sprite.Group()
 tile_sprites = pygame.sprite.Group()
 piece_sprites = pygame.sprite.Group()
 other_sprites = pygame.sprite.Group()
+particles_sprites = pygame.sprite.Group()
 
 red_piece_sprites = pygame.sprite.Group()
 blue_piece_sprites = pygame.sprite.Group()
 black_piece_sprites = pygame.sprite.Group()
 
+joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
 playerskolvo = 0
-joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 while playerskolvo == 0:
     playerskolvo = start_screen()
+
 level = load_level("map" + str(playerskolvo) + "_" + str(randrange(1, 6)) + ".txt")
 selected_cell = list(map(lambda x: x // 2 + 1, maximum))
 board = Board(playerskolvo)
-
 generate_level()
+
+SLEEPEVENT = pygame.USEREVENT + 1
+sleeptime = 1000 * 60
+pygame.time.set_timer(SLEEPEVENT, sleeptime)
+sleepevent_was = False
+f = False
+
+fonmusic = pygame.mixer.Sound('data\\fon.mp3')
+fonmusic.play(600)
+
 chosen_cell = False
 selecting_kill = False
 selecting_tree = False
 moving_tree = False
 game_over = False
+
 move_cells = []
 kill_cells = []
 selectinging_image = None
 running = True
 while running:
     joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-    for event in pygame.event.get():
+
+    events = pygame.event.get()
+    if events and not sleepevent_was:
+        pygame.time.set_timer(SLEEPEVENT, sleeptime)
+    if len(particles_sprites) == 1 and f:
+        for flashbang in particles_sprites:
+            flashbang.kill()
+            fonmusic.play(600)
+    elif len(particles_sprites) == 1 and not f:
+        for flashbang in particles_sprites:
+            flashbang.move()
+    elif len(particles_sprites) > 1:
+        f = True
+
+    for event in events:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN and\
@@ -725,6 +851,7 @@ while running:
                 moving_tree = True
                 if not (selectinging_image is None):
                     selectinging_image.kill()
+                pygame.mixer.Sound('data\\tree.mp3').play()
                 continue
 
         if moving_tree and\
@@ -749,6 +876,7 @@ while running:
                 selecting_kill = True
                 if not (selectinging_image is None):
                     selectinging_image.kill()
+                pygame.mixer.Sound('data\\tree.mp3').play()
 
         if selecting_kill and\
                 ((event.type == pygame.JOYBUTTONDOWN and event.button == 1) or
@@ -767,6 +895,12 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             board.get_click(event.pos)
+
+        if event.type == SLEEPEVENT and not sleepevent_was and pygame.mouse.get_focused():
+            fonmusic.stop()
+            sleepevent_was = True
+            image = load_image("flashbang.png")
+            AnimatedSprite(image, 4, 2, -200, 0)
     screen.fill((255, 255, 255))
     font = pygame.font.SysFont("Bauhaus 93", 30)
     if game_over:
@@ -825,6 +959,8 @@ while running:
         screen.blit(text, (10, height - 50))
     tile_sprites.draw(screen)
     other_sprites.draw(screen)
+    particles_sprites.draw(screen)
+    particles_sprites.update()
     piece_sprites.draw(screen)
     board.render()
     pygame.display.flip()
