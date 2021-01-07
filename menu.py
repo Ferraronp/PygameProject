@@ -114,7 +114,7 @@ def settings():
                         x = 460
                     else:
                         x = event.pos[0] - deltax
-                        volume = int(x / 440 * 100)
+                        volume = int(x / 460 * 100)
                         fonmusic.set_volume(volume / 100)
         fon = pygame.transform.scale(load_image('fon.png'), (width, height))
         screen.blit(fon, (0, 0))
@@ -259,8 +259,8 @@ def start_screen():
 def start(*args):
     global screen, width, height, clock, FPS, terminate, load_image  # Общие переменные(импортируются)
     global volume  # Возвращаемые переменные
-    lines = open("settings.txt", encoding="utf8", mode="r").readlines()
     try:
+        lines = open("settings.txt", encoding="utf8", mode="r").readlines()
         volume = 100
         for line in lines:
             if "volume=" == line[:7]:
