@@ -259,8 +259,8 @@ def start_screen():
 def start(*args):
     global screen, width, height, clock, FPS, terminate, load_image  # Общие переменные(импортируются)
     global volume  # Возвращаемые переменные
-    lines = open("settings.txt", encoding="utf8", mode="r").readlines()
     try:
+        lines = open("settings.txt", encoding="utf8", mode="r").readlines()
         volume = 100
         for line in lines:
             if "volume=" == line[:7]:
