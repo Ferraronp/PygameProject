@@ -5,6 +5,9 @@ from random import randrange
 import random
 
 import pygame
+
+from menu import start
+
 COLORS = ["red", "blue", "black"]
 left = 10
 top = 10
@@ -125,14 +128,6 @@ class Board:
                                                self.cell_size - 2,
                                                self.cell_size - 2), width=1)
 
-        # Отрисовка линий между клеток
-        '''for i in range(len(self.board)):
-                    for j in range(len(self.board[i])):
-                        pygame.draw.rect(screen, "white", (left + i * self.cell_size,
-                                                           top + j * self.cell_size,
-                                                           self.cell_size,
-                                                           self.cell_size), width=1)'''
-
     def get_click(self, pos):
         cell = self.get_cell(pos)
         global selected_cell
@@ -175,20 +170,9 @@ class Board:
         if len(self.playerslive) == 1:
             game_over = True
         if game_over:
+            fonmusic.stop()
             pygame.mixer.Sound('data\\win.mp3').play()
             clock.tick(2000)
-        '''for i in range(len(self.boardpiece)):
-            for j in range(len(self.boardpiece[i])):
-                if self.boardpiece[i][j] is None:
-                    print("N", end=' ')
-                elif type(self.boardpiece[i][j]) is Rook:
-                    print("R", end=' ')
-                elif type(self.boardpiece[i][j]) is Bishop:
-                    print("B", end=' ')
-                elif type(self.boardpiece[i][j]) is King:
-                    print("K", end=' ')
-            print()
-        print("==============\n")'''
 
     def kill(self, cell):
         if self.boardpiece[cell[1]][cell[0]] is None:
@@ -521,162 +505,6 @@ def create_particles(position):
         Particle(position, random.choice(numbers), random.choice(numbers))
 
 
-def training():
-    intro_text = ["Назад", "Далее"]
-
-    fon = pygame.transform.scale(load_image('fon.png'), (width, height))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 25
-    rects = []
-    texts = []
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
-        intro_rect = string_rendered.get_rect()
-        intro_rect.left = text_coord + 10
-        intro_rect.y = 550
-        rects += [(pygame.draw.rect(screen, "blue", (text_coord - 10, intro_rect.y - 15, 150, 50), width=0), "exit")]
-        text_coord += intro_rect.width
-        screen.blit(string_rendered, intro_rect)
-        texts += [(string_rendered, intro_rect)]
-        text_coord += 250
-    mousex, mousey = 0, 0
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                for rect, cmd in rects:
-                    if rect.left <= event.pos[0] <= rect.left + rect.width and \
-                            rect.top <= event.pos[1] <= rect.top + rect.height:
-                        if cmd == "exit":
-                            return
-                        return cmd()
-            if event.type == pygame.MOUSEMOTION:
-                mousex, mousey = event.pos
-        fon = pygame.transform.scale(load_image('fon.png'), (width, height))
-        screen.blit(fon, (0, 0))
-        for i in range(len(rects)):
-            if rects[i][0].left <= mousex <= rects[i][0].left + rects[i][0].width and \
-                    rects[i][0].top <= mousey <= rects[i][0].top + rects[i][0].height:
-                color = "red"
-            else:
-                color = "blue"
-            pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top, rects[i][0].width, rects[i][0].height))
-            screen.blit(*texts[i])
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
-def select_count_of_players():
-    intro_text = [("2 игрока", "exit"),
-                  ("3 игрока", "exit"),
-                  ("Назад", start_screen)]
-
-    fon = pygame.transform.scale(load_image('fon.png'), (width, height))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 10
-    rects = []
-    texts = []
-    for line, i in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 50
-        intro_rect.top = text_coord
-        intro_rect.x = 50
-        rects += [pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50), width=0)]
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-        texts += [(string_rendered, intro_rect)]
-    mousex, mousey = 0, 0
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                for i in range(len(rects)):
-                    if rects[i].left <= event.pos[0] <= rects[i].left + rects[i].width and\
-                            rects[i].top <= event.pos[1] <= rects[i].top + rects[i].height:
-                        if intro_text[i][1] == "exit":
-                            return i + 2
-                        return intro_text[i][1]()
-            if event.type == pygame.MOUSEMOTION:
-                mousex, mousey = event.pos
-        for i in range(len(rects)):
-            if rects[i].left <= mousex <= rects[i].left + rects[i].width and\
-                    rects[i].top <= mousey <= rects[i].top + rects[i].height:
-                color = "red"
-            else:
-                color = "blue"
-            pygame.draw.rect(screen, color, (rects[i].left, rects[i].top, rects[i].width, rects[i].height))
-            screen.blit(*texts[i])
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
-def start_screen():
-    egg = [4, 4, 6, 6, 7, 5, 7, 5, 13, 14, 3]
-    intro_text = [("Начать игру", select_count_of_players)]  # ,
-                  # ("Обучение", training)]
-
-    fon = pygame.transform.scale(load_image('fon.png'), (width, height))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    text_coord = 10
-    rects = []
-    texts = []
-    for line, cmd in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('yellow'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 50
-        intro_rect.top = text_coord
-        intro_rect.x = 50
-        rects += [(pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50), width=0), cmd)]
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-        texts += [(string_rendered, intro_rect)]
-    mousex, mousey = 0, 0
-    f = 0
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                for rect, cmd in rects:
-                    if rect.left <= event.pos[0] <= rect.left + rect.width and\
-                            rect.top <= event.pos[1] <= rect.top + rect.height:
-                        if cmd == "exit":
-                            return
-                        return cmd()
-            if event.type == pygame.JOYBUTTONDOWN:
-                # print(event.button, f, egg[f])
-                if event.button == egg[f]:
-                    f += 1
-                    if f == len(egg):
-                        print("Hello, world")
-                        j = sys.path[0]
-                        sys.path[0] += '\\data'
-                        import life
-                        life.start()
-                        sys.path[0] = j
-                        egg = [-1]
-                else:
-                    f = 0
-            if event.type == pygame.MOUSEMOTION:
-                mousex, mousey = event.pos
-        for i in range(len(rects)):
-            if rects[i][0].left <= mousex <= rects[i][0].left + rects[i][0].width and\
-                    rects[i][0].top <= mousey <= rects[i][0].top + rects[i][0].height:
-                color = "red"
-            else:
-                color = "blue"
-            pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top, rects[i][0].width, rects[i][0].height))
-            screen.blit(*texts[i])
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
 tile_images = {
     'gold': load_image('gold.png'),
     'empty1': load_image('grass1.png'),
@@ -702,9 +530,7 @@ black_piece_sprites = pygame.sprite.Group()
 
 joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
-playerskolvo = 0
-while playerskolvo == 0:
-    playerskolvo = start_screen()
+playerskolvo = start(screen, width, height, clock, FPS, terminate, load_image)
 
 level = load_level("map" + str(playerskolvo) + "_" + str(randrange(1, 6)) + ".txt")
 selected_cell = list(map(lambda x: x // 2 + 1, maximum))
@@ -717,7 +543,19 @@ pygame.time.set_timer(SLEEPEVENT, sleeptime)
 sleepevent_was = False
 f = False
 
+lines = open("settings.txt", encoding="utf8", mode="r").readlines()
+try:
+    volume = 100
+    for line in lines:
+        if "volume=" == line[:7]:
+            volume = int(line[7:])
+            if not (0 <= volume <= 100):
+                volume = 100
+            break
+except Exception:
+    volume = 100
 fonmusic = pygame.mixer.Sound('data\\fon.mp3')
+fonmusic.set_volume(volume / 100)
 fonmusic.play(600)
 
 chosen_cell = False
