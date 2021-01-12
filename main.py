@@ -3,15 +3,14 @@ import os
 from pprint import pprint
 from random import randrange
 import random
-
 import pygame
 
+from values import *
 from menu import start
 
 COLORS = ["red", "blue", "black"]
 left = 25
 top = 25
-maximum = (0, 0)
 gold_block = (0, 0)
 
 pygame.init()
@@ -19,72 +18,15 @@ pygame.font.init()
 pygame.joystick.init()
 pygame.mixer.init()
 
-FPS = 60
-clock = pygame.time.Clock()
-tile_width = tile_height = 50
-size = width, height = tile_width * 9 + 50, tile_height * 9 + 150
-
-screen_rect = (0, 0, width, height)
-screen = pygame.display.set_mode(size)
-
-
-def terminate():
-    pygame.quit()
-    pygame.mixer.quit()
-    pygame.font.quit()
-    pygame.joystick.quit()
-    sys.exit()
-
-
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    else:
-        image = image.convert_alpha()
-    return image
-
-
-def load_level(filename):
-    """Загрузка уровня из папки data и названия filename
-    Возвращает двумерный массив с игровым полем
-    x - клетки нет на поле
-    . - пустая клетка
-    @ - золотая клетка
-    # - дерево
-    0 + (i * 3) - король, i-ого цвета в списке
-    1 + (i * 3) - ладья, i-ого цвета в списке
-    2 + (i * 3) - слон, i-ого цвета в списке
-    Список цветов [red, blue, black]"""
-    filename = "data/" + filename
-    if not os.path.isfile(filename):
-        print(f"Файл с уровнем '{filename}' не найден")
-        sys.exit()
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
-
-    max_width = max(map(len, level_map))
-    global maximum
-    maximum = (max_width - 1, len(level_map) - 1)
-
-    return list(map(lambda x: list(x.ljust(max_width, '.')), level_map))
-
 
 code = "IDDQD"
 i = 0
 
 
 class Board:
-    def __init__(self, players, left, top):
-        """players - количество игроков от 2 до 3"""
-        # self.board = level
+    def __init__(self, players, left, top, maximum):
+        """Поле с фигурами
+        players - количество игроков от 2 до 3"""
         self.boardpiece = [[]]
         self.players = ["red", "blue", "black"][:players]
         self.playerslive = self.players[::]
@@ -92,9 +34,11 @@ class Board:
         self.kolvo = players
         self.left = left
         self.top = top
+        self.maximum = maximum
         self.cell_size = tile_width
 
     def render(self, kill_cells, move_cells, selected_cell, chosen_cell):
+        """Отрисовка краёв поля, клеток передвижения и сруба, выбранных клеток"""
         pygame.draw.rect(screen, "black", (self.left,
                                            self.top,
                                            self.cell_size * len(self.boardpiece[0]),
@@ -136,6 +80,7 @@ class Board:
             selected_cell = list(cell)
 
     def get_cell(self, pos):
+        """Определение клетки по которой кликнули"""
         x = (pos[0] - self.left) // self.cell_size
         y = (pos[1] - self.top) // self.cell_size
         if -1 < x < len(self.boardpiece) and -1 < y < len(self.boardpiece[0]):
@@ -143,9 +88,15 @@ class Board:
         return None
 
     def moved_cells(self, chosen_cell, level, selecting_kill=False):
-        return self.boardpiece[chosen_cell[1]][chosen_cell[0]].can_move(chosen_cell, self, level, selecting_kill)
+        """Отправка сигнала для передвижения фигуры"""
+        return self.boardpiece[chosen_cell[1]][chosen_cell[0]].can_move(chosen_cell,
+                                                                        self,
+                                                                        level,
+                                                                        selecting_kill,
+                                                                        self.maximum)
 
     def move_piece(self, chosen_cell, selected_cell, move_cells, kill_cells):
+        """Передвижение фигуры"""
         global game_over, selecting_tree, was_on_gold
         self.kill(selected_cell, chosen_cell)
 
@@ -180,6 +131,7 @@ class Board:
             pass
 
     def kill(self, cell, chosen_cell):
+        """Срубание фигуры"""
         if self.boardpiece[cell[1]][cell[0]] is None:
             return
         if type(self.boardpiece[cell[1]][cell[0]]) is King:
@@ -219,6 +171,7 @@ class Board:
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, x, y, left, top):
+        """Спрайт части поля"""
         super().__init__(all_sprites, tile_sprites)
         global tile_images
         self.x = x
@@ -251,7 +204,7 @@ class Piece(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * self.x + self.left, tile_height * self.y + self.top)
 
-    def can_move_like_rook(self, chosen_cell, board, level, selecting_kill):
+    def can_move_like_rook(self, chosen_cell, board, level, selecting_kill, maximum):
         move_cells = []
         kill_cells = []
         if chosen_cell[1] - 1 >= 0:
@@ -291,7 +244,7 @@ class Piece(pygame.sprite.Sprite):
                 move_cells += [[chosen_cell[0], chosen_cell[1] + 1]]
         return move_cells, kill_cells
 
-    def can_move_like_bishop(self, chosen_cell, board, level, selecting_kill):
+    def can_move_like_bishop(self, chosen_cell, board, level, selecting_kill, maximum):
         move_cells = []
         kill_cells = []
         if chosen_cell[1] - 1 >= 0 and chosen_cell[0] - 1 >= 0:
@@ -332,31 +285,37 @@ class Piece(pygame.sprite.Sprite):
         return move_cells, kill_cells
 
     def move(self):
+        """Передвижение спрайта"""
         self.rect = self.image.get_rect().move(
             tile_width * self.x + self.left, tile_height * self.y + self.top - (self.tree * 19))
 
 
 class King(Piece):
-    def can_move(self, chosen_cell, board, level, selecting_kill):
-        move_cells1, kill_cells1 = self.can_move_like_bishop(chosen_cell, board, level, selecting_kill)
-        move_cells2, kill_cells2 = self.can_move_like_rook(chosen_cell, board, level, selecting_kill)
+    def can_move(self, chosen_cell, board, level, selecting_kill, maximum):
+        move_cells1, kill_cells1 = self.can_move_like_bishop(chosen_cell,
+                                                             board, level, selecting_kill, maximum)
+        move_cells2, kill_cells2 = self.can_move_like_rook(chosen_cell,
+                                                           board, level, selecting_kill, maximum)
         return move_cells1 + move_cells2, kill_cells1 + kill_cells2
 
 
 class Rook(Piece):
-    def can_move(self, chosen_cell, board, level, selecting_kill):
-        move_cells, kill_cells = self.can_move_like_rook(chosen_cell, board, level, selecting_kill)
+    def can_move(self, chosen_cell, board, level, selecting_kill, maximum):
+        move_cells, kill_cells = self.can_move_like_rook(chosen_cell, board,
+                                                         level, selecting_kill, maximum)
         return move_cells, kill_cells
 
 
 class Bishop(Piece):
-    def can_move(self, chosen_cell, board, level, selecting_kill):
-        move_cells, kill_cells = self.can_move_like_bishop(chosen_cell, board, level, selecting_kill)
+    def can_move(self, chosen_cell, board, level, selecting_kill, maximum):
+        move_cells, kill_cells = self.can_move_like_bishop(chosen_cell, board,
+                                                           level, selecting_kill, maximum)
         return move_cells, kill_cells
 
 
 class Tree(pygame.sprite.Sprite):
     def __init__(self, x, y, left, top):
+        """Спрайт дерева"""
         super().__init__(all_sprites, tree_sprites)
         self.x = x
         self.y = y
@@ -367,12 +326,14 @@ class Tree(pygame.sprite.Sprite):
             tile_width * self.x + self.left, tile_height * self.y + self.top)
 
     def move(self):
+        """Передвижение спрайта после хода на золотую клетку"""
         self.rect = self.image.get_rect().move(
             tile_width * self.x + self.left, tile_height * self.y + self.top)
 
 
 class SelectImage(pygame.sprite.Sprite):
     def __init__(self, x, y, left, top):
+        """Спрайт выбора клетки дерева, срубания клетки"""
         super().__init__(all_sprites, piece_sprites)
         self.x = x
         self.y = y
@@ -382,6 +343,7 @@ class SelectImage(pygame.sprite.Sprite):
 
 
 def generate_level(level, board, left, top):
+    """Создание спрайтов в начале игры"""
     i = 1
     for y in range(len(level)):
         for x in range(len(level[y])):
@@ -420,6 +382,7 @@ def generate_level(level, board, left, top):
 
 
 def check_selected_cell():
+    """Проверка выбранной клетки на нахождение внутри поля"""
     res = True
     for i in range(2):
         if selected_cell[i] < 0:
@@ -437,6 +400,7 @@ class Particle(pygame.sprite.Sprite):
         fire.append(pygame.transform.scale(fire[0], (scale, scale)))
 
     def __init__(self, pos, dx, dy):
+        """Создание анимированного спрайта"""
         super().__init__(particles_sprites)
         self.image = random.choice(self.fire)
         self.rect = self.image.get_rect()
@@ -460,6 +424,7 @@ class Particle(pygame.sprite.Sprite):
 
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
+        """Создание светошумовой"""
         super().__init__(particles_sprites)
         self.i = 0
         self.ux = 20
@@ -473,6 +438,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         pygame.mixer.Sound('data\\flashbang_hit.mp3').play()
 
     def cut_sheet(self, sheet, columns, rows):
+        """Разделение картинки для анимирования"""
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
@@ -483,6 +449,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
                         frame_location, self.rect.size)), 270), True, False), (100, 60)))
 
     def update(self):
+        """Обновление картинки спрайта"""
         if not self.updating:
             return
         self.i += 1
@@ -498,6 +465,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
 
     def move(self):
+        """Передвижение спрайта"""
         if self.updating:
             return
         self.i += 1
@@ -515,10 +483,78 @@ class AnimatedSprite(pygame.sprite.Sprite):
 
 
 def create_particles(position):
+    """Создание частиц"""
     particle_count = 1000
     numbers = range(-100, 100)
     for _ in range(particle_count):
         Particle(position, random.choice(numbers), random.choice(numbers))
+
+
+def drawing():
+    """Отрисовка экрана"""
+    global selectinging_image
+    screen.blit(fon, (0, 0))
+    font = pygame.font.SysFont("Bauhaus 93", 30)
+    if game_over:
+        text = "Player " + str(board.playerslive[board.hod]) + " win"
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 90))
+        text = "Press any key to continue"
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 50))
+    elif selecting_tree:
+        text = "Player " + str(board.playerslive[board.hod])
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 90))
+        text = "Select tree to move"
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 50))
+        if level[selected_cell[1]][selected_cell[0]] == '#':
+            if not (selectinging_image is None):
+                selectinging_image.kill()
+            selectinging_image = SelectImage(selected_cell[0], selected_cell[1], left, top)
+        elif not (selectinging_image is None):
+            selectinging_image.kill()
+    elif moving_tree:
+        text = "Player " + str(board.playerslive[board.hod])
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 90))
+        text = "Select piece to place on tree"
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 50))
+        if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and \
+                board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod] and \
+                level[selected_cell[1]][selected_cell[0]] != '@':
+            if not (selectinging_image is None):
+                selectinging_image.kill()
+            selectinging_image = SelectImage(selected_cell[0], selected_cell[1], left, top)
+        elif not (selectinging_image is None):
+            selectinging_image.kill()
+    elif selecting_kill:
+        text = "Player " + str(board.playerslive[board.hod])
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 90))
+        text = "Select piece to kill"
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 50))
+        if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and \
+                board.boardpiece[selected_cell[1]][selected_cell[0]].color != board.playerslive[board.hod] and \
+                not (type(board.boardpiece[selected_cell[1]][selected_cell[0]]) is King):
+            if not (selectinging_image is None):
+                selectinging_image.kill()
+            selectinging_image = SelectImage(selected_cell[0], selected_cell[1], left, top)
+        elif not (selectinging_image is None):
+            selectinging_image.kill()
+    else:
+        text = "Player " + str(board.playerslive[board.hod]) + " move"
+        text = font.render(text, False, board.playerslive[board.hod])
+        screen.blit(text, (10, height - 50))
+    tile_sprites.draw(screen)
+    tree_sprites.draw(screen)
+    particles_sprites.draw(screen)
+    particles_sprites.update()
+    piece_sprites.draw(screen)
+    board.render(kill_cells, move_cells, selected_cell, chosen_cell)
 
 
 tile_images = {
@@ -534,29 +570,17 @@ was_on_gold = {
     "black": False
 }
 
-all_sprites = pygame.sprite.Group()
-tile_sprites = pygame.sprite.Group()
-piece_sprites = pygame.sprite.Group()
-tree_sprites = pygame.sprite.Group()
-particles_sprites = pygame.sprite.Group()
-
-red_piece_sprites = pygame.sprite.Group()
-blue_piece_sprites = pygame.sprite.Group()
-black_piece_sprites = pygame.sprite.Group()
-
 joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
 
-playerskolvo = start(screen, width, height, clock, terminate, load_image, generate_level, Board, load_level,
-                     all_sprites, tile_sprites, piece_sprites, tree_sprites,
-                     red_piece_sprites, blue_piece_sprites, black_piece_sprites, SelectImage)
+playerskolvo = start(Board, SelectImage, generate_level)
 
-level = load_level("map" + str(playerskolvo) + "_" + str(randrange(1, 6)) + ".txt")
-selected_cell = list(map(lambda x: x // 2, maximum))
-board = Board(playerskolvo, left, top)
+level, maximum = load_level("map" + str(playerskolvo) + "_" + str(randrange(1, 6)) + ".txt")
+selected_cell = (4, 4)
+board = Board(playerskolvo, left, top, maximum)
 generate_level(level, board, left, top)
 
 SLEEPEVENT = pygame.USEREVENT + 1
-sleeptime = 1000 * 1
+sleeptime = 1000 * 60
 pygame.time.set_timer(SLEEPEVENT, sleeptime)
 sleepevent_was = False
 f = False
@@ -679,7 +703,8 @@ while running:
                   list(board.get_cell(event.pos)) == selected_cell)):
             # Выбор/ход фигуры
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
-                    board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod]:
+                    board.boardpiece[selected_cell[1]][selected_cell[0]].color ==\
+                    board.playerslive[board.hod]:
                 chosen_cell = selected_cell[::]
                 move_cells, kill_cells = board.moved_cells(chosen_cell, level, selecting_kill)
             elif selected_cell in move_cells or selected_cell in kill_cells:
@@ -722,7 +747,8 @@ while running:
                   list(board.get_cell(event.pos)) == selected_cell)):
             # Передвижение дерева
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
-                    board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod] and\
+                    board.boardpiece[selected_cell[1]][selected_cell[0]].color ==\
+                    board.playerslive[board.hod] and\
                     level[selected_cell[1]][selected_cell[0]] != '@':
                 board.boardpiece[selected_cell[1]][selected_cell[0]].tree = True
                 board.boardpiece[selected_cell[1]][selected_cell[0]].move()
@@ -746,7 +772,8 @@ while running:
                   list(board.get_cell(event.pos)) == selected_cell)):
             # Выбор убийства фигуры
             if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
-                    board.boardpiece[selected_cell[1]][selected_cell[0]].color != board.playerslive[board.hod] and\
+                    board.boardpiece[selected_cell[1]][selected_cell[0]].color !=\
+                    board.playerslive[board.hod] and\
                     not (type(board.boardpiece[selected_cell[1]][selected_cell[0]]) is King):
                 board.kill(selected_cell, selected_cell)
                 selecting_kill = False
@@ -762,68 +789,7 @@ while running:
             sleepevent_was = True
             image = load_image("flashbang.png")
             AnimatedSprite(image, 4, 2, -200, 0)
-    screen.blit(fon, (0, 0))
-    font = pygame.font.SysFont("Bauhaus 93", 30)
-    if game_over:
-        text = "Player " + str(board.playerslive[board.hod]) + " win"
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 90))
-        text = "Press any key to continue"
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 50))
-    elif selecting_tree:
-        text = "Player " + str(board.playerslive[board.hod])
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 90))
-        text = "Select tree to move"
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 50))
-        if level[selected_cell[1]][selected_cell[0]] == '#':
-            if not (selectinging_image is None):
-                selectinging_image.kill()
-            selectinging_image = SelectImage(selected_cell[0], selected_cell[1], left, top)
-        elif not (selectinging_image is None):
-            selectinging_image.kill()
-    elif moving_tree:
-        text = "Player " + str(board.playerslive[board.hod])
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 90))
-        text = "Select piece to place on tree"
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 50))
-        if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
-                board.boardpiece[selected_cell[1]][selected_cell[0]].color == board.playerslive[board.hod] and\
-                level[selected_cell[1]][selected_cell[0]] != '@':
-            if not (selectinging_image is None):
-                selectinging_image.kill()
-            selectinging_image = SelectImage(selected_cell[0], selected_cell[1], left, top)
-        elif not (selectinging_image is None):
-            selectinging_image.kill()
-    elif selecting_kill:
-        text = "Player " + str(board.playerslive[board.hod])
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 90))
-        text = "Select piece to kill"
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 50))
-        if not (board.boardpiece[selected_cell[1]][selected_cell[0]] is None) and\
-                board.boardpiece[selected_cell[1]][selected_cell[0]].color != board.playerslive[board.hod] and \
-                not (type(board.boardpiece[selected_cell[1]][selected_cell[0]]) is King):
-            if not (selectinging_image is None):
-                selectinging_image.kill()
-            selectinging_image = SelectImage(selected_cell[0], selected_cell[1], left, top)
-        elif not (selectinging_image is None):
-            selectinging_image.kill()
-    else:
-        text = "Player " + str(board.playerslive[board.hod]) + " move"
-        text = font.render(text, False, board.playerslive[board.hod])
-        screen.blit(text, (10, height - 50))
-    tile_sprites.draw(screen)
-    tree_sprites.draw(screen)
-    particles_sprites.draw(screen)
-    particles_sprites.update()
-    piece_sprites.draw(screen)
-    board.render(kill_cells, move_cells, selected_cell, chosen_cell)
+    drawing()
     pygame.display.flip()
     clock.tick(FPS)
 terminate()

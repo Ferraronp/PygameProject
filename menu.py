@@ -4,32 +4,24 @@ from pprint import pprint
 from random import randrange
 import random
 import pygame
-
-all_sprites = pygame.sprite.Group()
-tile_sprites = pygame.sprite.Group()
-piece_sprites = pygame.sprite.Group()
-other_sprites = pygame.sprite.Group()
-
-red_piece_sprites = pygame.sprite.Group()
-blue_piece_sprites = pygame.sprite.Group()
-black_piece_sprites = pygame.sprite.Group()
+from values import *
 
 
 def generate():
-    global board, level, selected_cell
-    level = load_level(f"training\\map{window_num}.txt")
-    board = Board(3, left, top)
+    global board, level, selected_cell, maximum
+    level, maximum = load_level(f"training\\map{window_num}.txt")
+    board = Board(3, left, top, [5, 5])
     board.hod = 0
     generate_level(level, board, left, top)
 
     if window_num == 10:
         for sprite in piece_sprites:
-            if sprite.x == 0 and sprite.y == 0:
-                sprite.x = 1
-                sprite.y = 1
+            if sprite.x == 1 and sprite.y == 1:
+                sprite.x = 2
+                sprite.y = 2
                 sprite.tree = True
-                board.boardpiece[1][1] = board.boardpiece[0][0]
-                board.boardpiece[0][0] = None
+                board.boardpiece[2][2] = board.boardpiece[1][1]
+                board.boardpiece[1][1] = None
                 sprite.move()
 
 
@@ -55,8 +47,10 @@ def drawing(rects, texts, mousex, mousey):
         else:
             color = "blue"
         pygame.draw.rect(screen, "white",
-                         (rects[i][0].left - 1, rects[i][0].top - 1, rects[i][0].width + 2, rects[i][0].height + 2))
-        pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top, rects[i][0].width, rects[i][0].height))
+                         (rects[i][0].left - 1, rects[i][0].top - 1,
+                          rects[i][0].width + 2, rects[i][0].height + 2))
+        pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top,
+                                         rects[i][0].width, rects[i][0].height))
         screen.blit(*texts[i])
 
     all_sprites.draw(screen)
@@ -81,58 +75,58 @@ def moving():
     itr += 1
     if window_num == 1:
         if itr == 40:
-            chosen_cell = [0, 0]
+            chosen_cell = [1, 1]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [1, 0], move_cells, kill_cells)
-            chosen_cell = False
-            move_cells = []
-            kill_cells = []
-        elif itr == 120:
-            chosen_cell = [2, 2]
-            move_cells, kill_cells = board.moved_cells(chosen_cell, level)
-        elif itr == 160:
             board.move_piece(chosen_cell, [2, 1], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
+        elif itr == 120:
+            chosen_cell = [3, 3]
+            move_cells, kill_cells = board.moved_cells(chosen_cell, level)
+        elif itr == 160:
+            board.move_piece(chosen_cell, [3, 2], move_cells, kill_cells)
+            chosen_cell = False
+            move_cells = []
+            kill_cells = []
         elif itr == 200:
-            chosen_cell = [1, 0]
+            chosen_cell = [2, 1]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 240:
-            board.move_piece(chosen_cell, [2, 0], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [3, 1], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 280:
-            chosen_cell = [2, 1]
+            chosen_cell = [3, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 320:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
-            chosen_cell = False
-            move_cells = []
-            kill_cells = []
-        elif itr == 360:
-            chosen_cell = [2, 0]
-            move_cells, kill_cells = board.moved_cells(chosen_cell, level)
-        elif itr == 400:
-            board.move_piece(chosen_cell, [1, 0], move_cells, kill_cells)
-            chosen_cell = False
-            move_cells = []
-            kill_cells = []
-        elif itr == 440:
-            chosen_cell = [1, 1]
-            move_cells, kill_cells = board.moved_cells(chosen_cell, level)
-        elif itr == 480:
             board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
+        elif itr == 360:
+            chosen_cell = [3, 1]
+            move_cells, kill_cells = board.moved_cells(chosen_cell, level)
+        elif itr == 400:
+            board.move_piece(chosen_cell, [2, 1], move_cells, kill_cells)
+            chosen_cell = False
+            move_cells = []
+            kill_cells = []
+        elif itr == 440:
+            chosen_cell = [2, 2]
+            move_cells, kill_cells = board.moved_cells(chosen_cell, level)
+        elif itr == 480:
+            board.move_piece(chosen_cell, [3, 3], move_cells, kill_cells)
+            chosen_cell = False
+            move_cells = []
+            kill_cells = []
         elif itr == 560:
-            chosen_cell = [1, 0]
+            chosen_cell = [2, 1]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 600:
-            board.move_piece(chosen_cell, [0, 0], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -140,10 +134,10 @@ def moving():
             itr = 0
     elif window_num == 2:
         if itr == 40:
-            chosen_cell = [0, 1]
+            chosen_cell = [1, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -151,36 +145,36 @@ def moving():
                 pygame.mixer.Sound('data\\win.mp3').play()
             music = False
         elif itr == 120:
-            board.move_piece([1, 1], [0, 1], move_cells, kill_cells)
+            board.move_piece([2, 2], [1, 2], move_cells, kill_cells)
             itr = 1
     elif window_num == 3:
         if itr == 40:
-            chosen_cell = [0, 1]
+            chosen_cell = [1, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 120:
-            board.move_piece([1, 1], [0, 1], move_cells, kill_cells)
+            board.move_piece([2, 2], [1, 2], move_cells, kill_cells)
             delete()
             generate()
             itr = 0
     elif window_num == 4:
         if itr == 40:
-            chosen_cell = [1, 1]
+            chosen_cell = [2, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [1, 0], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 1], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 120:
-            chosen_cell = [1, 0]
+            chosen_cell = [2, 1]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 160:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -188,18 +182,18 @@ def moving():
             itr = 0
     elif window_num == 5:
         if itr == 40:
-            chosen_cell = [1, 1]
+            chosen_cell = [2, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [0, 0], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 120:
-            chosen_cell = [0, 0]
+            chosen_cell = [1, 1]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 160:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -207,26 +201,26 @@ def moving():
             itr = 0
     elif window_num == 6:
         if itr == 40:
-            chosen_cell = [1, 1]
+            chosen_cell = [2, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [0, 0], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 120:
-            chosen_cell = [0, 0]
+            chosen_cell = [1, 1]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 160:
-            board.move_piece(chosen_cell, [1, 0], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 1], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 200:
-            chosen_cell = [1, 0]
+            chosen_cell = [2, 1]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 240:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -234,18 +228,18 @@ def moving():
             itr = 0
     elif window_num == 7:
         if itr == 40:
-            chosen_cell = [1, 1]
+            chosen_cell = [2, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [1, 2], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 3], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 120:
-            chosen_cell = [1, 2]
+            chosen_cell = [2, 3]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 160:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -253,10 +247,10 @@ def moving():
             itr = 0
     elif window_num == 8:
         if itr == 40:
-            chosen_cell = [0, 1]
+            chosen_cell = [1, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -266,15 +260,15 @@ def moving():
             itr = 0
     elif window_num == 9:
         if itr == 40:
-            chosen_cell = [1, 2]
+            chosen_cell = [2, 3]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
-            board.move_piece(chosen_cell, [1, 1], move_cells, kill_cells)
+            board.move_piece(chosen_cell, [2, 2], move_cells, kill_cells)
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 120:
-            g = SelectImage(0, 1, left, top)
+            g = SelectImage(1, 2, left, top)
         elif itr == 160:
             g.kill()
         elif itr == 200:
@@ -284,24 +278,24 @@ def moving():
                 tree.y = -500
                 tree.move()
         elif itr == 240:
-            g = SelectImage(0, 2, left, top)
+            g = SelectImage(1, 3, left, top)
         elif itr == 280:
             g.kill()
             for tree in tree_sprites:
-                tree.x = 0
-                tree.y = 2
+                tree.x = 1
+                tree.y = 3
                 tree.move()
             for sprite in piece_sprites:
-                if sprite.x == 0 and sprite.y == 2:
+                if sprite.x == 1 and sprite.y == 3:
                     sprite.tree = True
                     sprite.move()
                     break
         elif itr == 320:
-            g = SelectImage(2, 0, left, top)
+            g = SelectImage(3, 1, left, top)
         elif itr == 360:
             g.kill()
         elif itr == 400:
-            board.boardpiece[0][2].kill()
+            board.boardpiece[1][3].kill()
             board.hod = 1
         elif itr == 440:
             delete()
@@ -309,19 +303,19 @@ def moving():
             itr = 0
     elif window_num == 10:
         if itr == 40:
-            chosen_cell = [0, 1]
+            chosen_cell = [1, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 80:
             chosen_cell = False
             move_cells = []
             kill_cells = []
         elif itr == 120:
-            chosen_cell = [1, 1]
+            chosen_cell = [2, 2]
             move_cells, kill_cells = board.moved_cells(chosen_cell, level)
         elif itr == 160:
-            board.move_piece(chosen_cell, [0, 1], move_cells, kill_cells)
-            board.boardpiece[1][0].tree = False
-            board.boardpiece[1][0].move()
+            board.move_piece(chosen_cell, [1, 2], move_cells, kill_cells)
+            board.boardpiece[2][1].tree = False
+            board.boardpiece[2][1].move()
             chosen_cell = False
             move_cells = []
             kill_cells = []
@@ -508,7 +502,8 @@ def select_count_of_players():
         text_coord += 50
         intro_rect.top = text_coord
         intro_rect.x = 50
-        rects += [(pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50), width=0), cmd)]
+        rects += [(pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50),
+                                    width=0), cmd)]
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
         texts += [(string_rendered, intro_rect)]
@@ -563,7 +558,8 @@ def start_screen():
         text_coord += 50
         intro_rect.top = text_coord
         intro_rect.x = 50
-        rects += [(pygame.draw.rect(screen, "blue", (intro_rect.x - 15, text_coord - 15, 150, 50), width=0), cmd)]
+        rects += [(pygame.draw.rect(screen, "blue",
+                                    (intro_rect.x - 15, text_coord - 15, 150, 50), width=0), cmd)]
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
         texts += [(string_rendered, intro_rect)]
@@ -598,21 +594,22 @@ def start_screen():
             else:
                 color = "blue"
             pygame.draw.rect(screen, "white",
-                             (rects[i][0].left - 1, rects[i][0].top - 1, rects[i][0].width + 2, rects[i][0].height + 2))
-            pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top, rects[i][0].width, rects[i][0].height))
+                             (rects[i][0].left - 1, rects[i][0].top - 1,
+                              rects[i][0].width + 2, rects[i][0].height + 2))
+
+            pygame.draw.rect(screen, color, (rects[i][0].left, rects[i][0].top,
+                                             rects[i][0].width, rects[i][0].height))
             screen.blit(*texts[i])
         pygame.display.flip()
         clock.tick(FPS)
 
 
 def start(*args):
-    # Общие переменные(импортируются)
-    global screen, width, height, clock, terminate, load_image, generate_level, Board, load_level
-    global all_sprites, tile_sprites, piece_sprites, tree_sprites
-    global red_piece_sprites, blue_piece_sprites, black_piece_sprites, SelectImage
-    global volume  # Возвращаемые переменные
+    global Board, SelectImage, generate_level, maximum
+
+    global volume
     global left, top, fon, fonplus, selected_cell, chosen_cell, FPS
-    left, top = 175, 100
+    left, top = 125, 100
     FPS = 50
     selected_cell = [-500, -500]
     chosen_cell = [-500, -500]
@@ -627,9 +624,7 @@ def start(*args):
                 break
     except Exception:
         volume = 100
-    screen, width, height, clock, terminate, load_image, generate_level, Board, load_level, \
-    all_sprites, tile_sprites, piece_sprites, tree_sprites, \
-    red_piece_sprites, blue_piece_sprites, black_piece_sprites, SelectImage = args
+    Board, SelectImage, generate_level = args
     fon = pygame.transform.scale(load_image('fon.png'), (width, height))
     fonplus = pygame.transform.scale(load_image('fonplus.png'), (300, 150))
 
